@@ -1,8 +1,11 @@
 # inkscape2cetz
 
 Inkscape extension to export selected objects to cetz (Typst) format.
+![GUI](https://raw.githubusercontent.com/PhosCity/inkscape2cetz/refs/heads/main/assets/gui.png)
 
 ## Showcase
+
+https://github.com/user-attachments/assets/82fa3216-382a-4bc6-9e12-48d73f42d474
 
 ## This sucks and you shouldn't use it
 
@@ -38,6 +41,12 @@ There are some things you _need_ to do for proper export.
 1. Make sure that the scale is 1.
 1. If precision is of any importance to you, enable grid and snap in inkscape.
 
+
+
+https://github.com/user-attachments/assets/c31836e7-270c-44bb-a42b-79278bec94f2
+
+
+
 ## Supported SVG attributes
 
 - attributes essential to the elements like rectangle, circle, ellipse, line, path etc.
@@ -58,6 +67,8 @@ There are some things you _need_ to do for proper export.
 Rectangle element along with its attributes is supported. If rectangle is skewed or rotated, it will be converted to paths. Scaled or translated rectangle however will remain a rectangle.
 
 If you want to convert rectangle to grid, select a rectangle element, go to `Object -> Object Properties` and type `grid` in the label textbox. The stroke color of the rectangle will be used as the color of the grid. This means what looks like a rectangle in inkscape will be converted to grid in cetz if it is manually labelled as `grid` by the user.
+
+![grid](https://raw.githubusercontent.com/PhosCity/inkscape2cetz/refs/heads/main/assets/grid.png)
 
 ### Circle and Ellipse
 
