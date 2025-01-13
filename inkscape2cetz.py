@@ -595,19 +595,19 @@ def path2cetz(
         if command == "M":
             current_position = point
             start_position = point
-            collection.append({"paths": [{"path": []}], "merge_path": False})
+            collection.append({"path": []})
 
         elif command == "L":
-            previous_path = collection[-1]["paths"]
+            current_shape = collection[-1]
             if previous_command == "M":
-                previous_path[-1]["path"].extend([*current_position, *point])
-                previous_path[-1]["type"] = "line"
+                current_shape["path"].extend([*current_position, *point])
+                current_shape["type"] = "line"
 
             elif previous_command == command:
-                previous_path[-1]["path"].extend(point)
+                current_shape["path"].extend(point)
 
             else:
-                previous_path.append(
+                collection.append(
                     {
                         "path": [*current_position, *point],
                         "type": "line",
@@ -626,23 +626,22 @@ def path2cetz(
                 point[2],
                 point[3],
             ]
-            previous_path = collection[-1]["paths"]
+            current_shape = collection[-1]
             if previous_command == "M":
-                previous_path[-1]["path"] = bezier
-                previous_path[-1]["type"] = "bezier"
+                current_shape["path"] = bezier
+                current_shape["type"] = "bezier"
             else:
-                previous_path.append({"path": bezier, "type": "bezier"})
+                collection.append({"path": bezier, "type": "bezier"})
             current_position = [point[4], point[5]]
 
         elif command == "Z":
-            previous_path = collection[-1]["paths"]
-            collection[-1]["merge_path"] = True
+            current_shape = collection[-1]
             if current_position == start_position:
                 pass
             elif previous_command == "L":
-                previous_path[-1]["path"].extend(start_position)
+                current_shape["path"].extend(start_position)
             else:
-                previous_path.append(
+                collection.append(
                     {
                         "path": [*current_position, *start_position],
                         "type": "line",
@@ -655,35 +654,22 @@ def path2cetz(
         pairs = list(zip(points[::2], points[1::2]))
         return ", ".join(f"({x}, {y})" for x, y in pairs)
 
-    final_result = []
-    style = ", ".join(process_style(shape_elem, info, include_markers=True))
-
-    for item in collection:
-        if item["merge_path"]:
-            result = []
-            for shape in item["paths"]:
-                result.append(
-                    "%s(%s)" % (shape["type"], create_line(shape)),
-                )
-            final_result.append(
-                "merge-path(%s, {\n        %s\n})"
-                % (
-                    style,
-                    "\n".join(result),
-                )
+    if len(collection) == 1:
+        style = ", ".join(process_style(shape_elem, info, include_markers=True))
+        path = collection[0]
+        path_type = collection[0]["type"]
+        return f"{path_type}({create_line(path)}, {style})"
+    else:
+        result = []
+        style = ", ".join(process_style(shape_elem, info, include_markers=False))
+        for shape in collection:
+            result.append(
+                "%s(%s)" % (shape["type"], create_line(shape)),
             )
-        else:
-            for shape in item["paths"]:
-                final_result.append(
-                    "%s(%s, %s)"
-                    % (
-                        shape["type"],
-                        create_line(shape),
-                        style,
-                    )
-                )
-
-    return "\n".join(final_result)
+        return "merge-path(%s, {\n        %s\n})" % (
+            style,
+            "\n".join(result),
+        )
 
 
 def text2cetz(text_element: inkex.TextElement, info: dict, bounding_box: dict) -> str:
