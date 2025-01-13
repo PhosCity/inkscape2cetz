@@ -3,14 +3,20 @@
     <name>Convert to Cetz</name>
     <id>convert_to_cetz</id>
     <param name="precision" type="int" min="0" max="3" gui-text="Rounding precision">3</param>
+    <label appearance="header">Context</label>
     <param name="wrap" type="optiongroup" appearance="radio" gui-text="Wrap it inside">
         <option value="figure" default="true">Figure</option>
         <option value="align">Align</option>
         <option value="cetz">Cetz</option>
     </param>
-    <label>Text</label>
+    <label appearance="header">Text</label>
     <param name="ignore_font" type="bool" gui-text="Ignore Font Used">false</param>
     <param name="default_font" type="string" gui-text="Default Font">libertinus serif</param>
+    <label appearance="header">Markers</label>
+    <param name="marker" type="optiongroup" appearance="radio" gui-text="If unknown marker is used">
+        <option value="no_unknown_marker" default="true">Do not export marker</option>
+        <option value="use_triangle_marker">Use Triangle</option>
+    </param>
     <effect needs-live-preview="false">
         <effects-menu>
             <submenu name="Export"/>

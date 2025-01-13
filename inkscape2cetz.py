@@ -25,7 +25,9 @@ import tempfile
 import inkex
 
 
-def normalize_path(shape_elem: inkex.ShapeElement, scale: int | float) -> inkex.Path:
+def normalize_path(
+    shape_elem: inkex.ShapeElement, viewBoxScale: int | float
+) -> inkex.Path:
     """
     Normalize path to proper scale and coordinate system.
 
@@ -49,7 +51,6 @@ def normalize_path(shape_elem: inkex.ShapeElement, scale: int | float) -> inkex.
     elem = elem.to_absolute()
 
     # Apply viewBox scaling
-    viewBoxScale = scale
     if viewBoxScale != 1:
         elem.scale(viewBoxScale, viewBoxScale, True)
 
@@ -147,7 +148,6 @@ def process_style(element, info, include_markers=False, include_text_info=False)
 
         Parameters:
         color (inkex.Color | inkex.LinearGradient | inkex.RadialGradient): color to process
-        elem (inkex.ShapeElement): Any visible element in Inkscape
         style (inkex.Style): Style object composed for this specific element
 
         Returns:
@@ -202,68 +202,42 @@ def process_style(element, info, include_markers=False, include_text_info=False)
             inkex.errormsg("Unsupported fill type.")
             sys.exit()
 
-    def process_marker(style):
+    def process_marker(style, marker_map, marker_type="start"):
         """
         Collect mark information of an element
 
         Parameters:
         style (inkex.Style): Style object composed for this specific element
+        marker_map (dict): Dictionary that maps stock marker of inkscape to a mark available in cetz
+        marker_type (str): Type of marker: start or end
 
         Returns:
         str: Properly formatted marker style about an element as cetz understands it
         """
-        marker_map = {
-            "Wide arrow": {"symbol": "straight", "fill": None},
-            "Wide, rounded arrow": {"symbol": "straight", "fill": None},
-            "Wide, heavy arrow": {"symbol": "straight", "fill": None},
-            "Triangle arrow": {"symbol": "triangle", "fill": "black"},
-            "Colored triangle": {"symbol": "triangle", "fill": None},
-            "Dart arrow": {"symbol": "triangle", "fill": "black"},
-            "Concave triangle arrow": {"symbol": "stealth", "fill": "black"},
-            "Rounded arrow": {"symbol": "triangle", "fill": "black"},
-            "Dot": {"symbol": "circle", "fill": "black"},
-            "Colored dot": {"symbol": "circle", "fill": None},
-            "Square": {"symbol": "rect", "fill": "black"},
-            "Colored square": {"symbol": "rect", "fill": None},
-            "Diamond": {"symbol": "diamond", "fill": "black"},
-            "Colored diamond": {"symbol": "diamond", "fill": None},
-            "Stop": {"symbol": "bar", "fill": None},
-            "X": {"symbol": "x", "fill": None},
-            "Empty semicircle": {"symbol": "hook", "fill": None},
-            "Stylized triangle arrow": {"symbol": "barbed", "fill": None},
-        }
 
-        marker_collection = []
+        marker = style(f"marker-{marker_type}")
 
-        marker_start = style("marker-start")
-        if marker_start is not None:
-            marker_start_id = marker_start.get(
-                "{http://www.inkscape.org/namespaces/inkscape}stockid"
-            )
-            if res := marker_map.get(marker_start_id):
-                symbol = res["symbol"]
-                fill = res["fill"]
+        if marker is None:
+            return
 
-                marker_collection.append(
-                    f'start: (symbol: "{symbol}", fill: {fill})'
-                    if fill
-                    else f'start: (symbol: "{symbol}")'
-                )
+        marker_id = marker.get("{http://www.inkscape.org/namespaces/inkscape}stockid")
 
-        marker_end = style("marker-end")
-        if marker_end is not None:
-            marker_end_id = marker_end.get(
-                "{http://www.inkscape.org/namespaces/inkscape}stockid"
-            )
-            if res := marker_map.get(marker_end_id):
-                symbol = res["symbol"]
-                fill = res["fill"]
-                marker_collection.append(
-                    f'end: (symbol: "{symbol}", fill: {fill})'
-                    if fill
-                    else f'end: (symbol: "{symbol}")'
-                )
-        return marker_collection
+        mark = marker_map.get(marker_id, None)
+
+        if mark is None:
+            if info["marker"] == "no_unknown_marker":
+                return
+            else:
+                mark = marker_map.get("Triangle arrow")
+
+        symbol = mark["symbol"]
+        fill = mark["fill"]
+
+        return (
+            f'{marker_type}: (symbol: "{symbol}", fill: {fill})'
+            if fill
+            else f'start: (symbol: "{symbol}")'
+        )
 
     style = element.specified_style()
     res = []
@@ -335,9 +309,35 @@ def process_style(element, info, include_markers=False, include_text_info=False)
 
     # Markers
     if include_markers:
-        marker = process_marker(style)
-        if len(marker) > 0:
-            res.append(f"mark: ({", ".join(marker)})")
+        marker_map = {
+            "Wide arrow": {"symbol": "straight", "fill": None},
+            "Wide, rounded arrow": {"symbol": "straight", "fill": None},
+            "Wide, heavy arrow": {"symbol": "straight", "fill": None},
+            "Triangle arrow": {"symbol": "triangle", "fill": "black"},
+            "Colored triangle": {"symbol": "triangle", "fill": None},
+            "Dart arrow": {"symbol": "triangle", "fill": "black"},
+            "Concave triangle arrow": {"symbol": "stealth", "fill": "black"},
+            "Rounded arrow": {"symbol": "triangle", "fill": "black"},
+            "Dot": {"symbol": "circle", "fill": "black"},
+            "Colored dot": {"symbol": "circle", "fill": None},
+            "Square": {"symbol": "rect", "fill": "black"},
+            "Colored square": {"symbol": "rect", "fill": None},
+            "Diamond": {"symbol": "diamond", "fill": "black"},
+            "Colored diamond": {"symbol": "diamond", "fill": None},
+            "Stop": {"symbol": "bar", "fill": None},
+            "X": {"symbol": "x", "fill": None},
+            "Empty semicircle": {"symbol": "hook", "fill": None},
+            "Stylized triangle arrow": {"symbol": "barbed", "fill": None},
+        }
+        mark = ""
+        if marker_start := process_marker(style, marker_map, marker_type="start"):
+            mark += marker_start
+
+        if marker_end := process_marker(style, marker_map, marker_type="end"):
+            mark += marker_end
+
+        if mark != "":
+            res.append(f"mark: ({mark})")
 
     # Text Info
     if include_text_info:
@@ -385,7 +385,7 @@ def process_style(element, info, include_markers=False, include_text_info=False)
             "800": "extrabold",
             "900": "black",
         }
-        if weight := font_weight_map[font_weight]:  # pyright: ignore [reportArgumentType]
+        if weight := font_weight_map[font_weight]:
             if weight != "regular":
                 res.append(f'weight: "{weight}"')
         else:
@@ -711,6 +711,7 @@ class ConvertToCetz(inkex.EffectExtension):
             "--ignore_font", type=inkex.Boolean, help="ignore font used in svg"
         )
         pars.add_argument("--default_font", type=str, help="default font to use")
+        pars.add_argument("--marker", type=str, help="handle unknown marker")
 
     def collect_elements(self, element: inkex.ShapeElement) -> list[inkex.ShapeElement]:
         """
@@ -823,6 +824,7 @@ class ConvertToCetz(inkex.EffectExtension):
             "precision": self.options.precision,
             "ignore_font": self.options.ignore_font,
             "default_font": self.options.default_font,
+            "marker": self.options.marker,
         }
 
         result = []
