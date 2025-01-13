@@ -368,7 +368,7 @@ def process_style(element, info, include_markers=False, include_text_info=False)
             res.append(f"font: {font_family}")
 
         # Font-size
-        font_size = round_number(element.to_dimensional(font_size, to_unit="pt"), 0)
+        font_size = round_number(element.uutounit(font_size, to_unit="pt"), 0)
         res.append(f"size: {font_size}pt")
 
         # Font Weight
