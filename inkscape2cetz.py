@@ -276,7 +276,7 @@ def process_style(element, info, include_markers=False, include_text_info=False)
     # Stroke
     stroke = style("stroke")
     stroke_width = float(style("stroke-width"))
-    if stroke is not None or stroke_width < 1e-5:
+    if stroke is not None and stroke_width > 0:
         stroke_collection = []
 
         # Color
@@ -285,7 +285,7 @@ def process_style(element, info, include_markers=False, include_text_info=False)
 
         # Thickness
         stroke_width = element.uutounit(stroke_width, to_unit="pt")
-        if stroke_width - 1 >= 1e-5:
+        if stroke_width - 1 > 1e-5:
             stroke_order = style("paint-order")
             if stroke_order == "normal":
                 stroke_order = "fill stroke markers"
