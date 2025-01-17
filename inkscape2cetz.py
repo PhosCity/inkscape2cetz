@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-__version__ = "0.0.2"
+__version__ = "0.0.3"
 
 import math
 import sys
@@ -329,15 +329,15 @@ def process_style(element, info, include_markers=False, include_text_info=False)
             "Empty semicircle": {"symbol": "hook", "fill": None},
             "Stylized triangle arrow": {"symbol": "barbed", "fill": None},
         }
-        mark = ""
+        mark = []
         if marker_start := process_marker(style, marker_map, marker_type="start"):
-            mark += marker_start
+            mark.append(marker_start)
 
         if marker_end := process_marker(style, marker_map, marker_type="end"):
-            mark += marker_end
+            mark.append(marker_end)
 
-        if mark != "":
-            res.append(f"mark: ({mark})")
+        if len(mark) > 0:
+            res.append(f"mark: ({", ".join(mark)})")
 
     # Text Info
     if include_text_info:
